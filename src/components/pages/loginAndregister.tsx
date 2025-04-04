@@ -18,12 +18,29 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showNewConfirmPassword, setShowNewConfirmPassword] = useState(false);
-
-  const [forgotStep, setForgotStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [forgotStep, setForgotStep] = useState(1);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showNewConfirmPassword, setShowNewConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSendOtp = () => {
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    setTimeout(() => {
+      console.log("OTP sent to:", email);
+      setForgotStep(2);
+      setLoading(false);
+    }, 1500);
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen bg-black text-white overflow-hidden">
@@ -34,7 +51,6 @@ export default function LoginPage() {
           Manage your cricket tournament, teams, and matches
         </p>
 
-        {/* Toggle Buttons */}
         {!isForgotPassword && (
           <div className="bg-[#27272A] p-1 mb-8 mt-4 w-full max-w-md rounded-lg">
             <div className="flex gap-2">
@@ -64,13 +80,10 @@ export default function LoginPage() {
           </div>
         )}
 
-       <div className="w-full max-w-md leading-1">
-          {/* Forgot Password Flow */}
+        <div className="w-full max-w-md leading-1">
           {isForgotPassword ? (
             <form className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4 text-center">
-                Forgot Password
-              </h2>
+              <h2 className="text-xl font-semibold mb-4 text-center">Forgot Password</h2>
 
               {forgotStep === 1 && (
                 <>
@@ -83,12 +96,15 @@ export default function LoginPage() {
                       placeholder="Enter your email"
                       className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
                     />
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
                   </div>
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
-                    onClick={() => setForgotStep(2)}
+                    onClick={handleSendOtp}
+                    disabled={email.trim() === "" || loading}
+                    type="button"
                   >
-                    Send OTP
+                    {loading ? "Sending OTP..." : "Send OTP"}
                   </Button>
                 </>
               )}
@@ -96,7 +112,10 @@ export default function LoginPage() {
               {forgotStep === 2 && (
                 <>
                   <div className="space-y-4">
-                    <Label>One-Time-Password</Label>
+                    <Label>One-Time Password</Label>
+                    <p className="text-sm text-gray-400 text-center">
+                      OTP sent to <span className="font-medium text-white">{email}</span>
+                    </p>
                     <div className="flex justify-center">
                       <div className="w-full max-w-md">
                         <OTPInput value={otp} onChange={setOtp} />
@@ -107,6 +126,7 @@ export default function LoginPage() {
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
                     onClick={() => setForgotStep(3)}
                     disabled={otp.length !== 6}
+                    type="button"
                   >
                     Verify OTP
                   </Button>
@@ -160,9 +180,13 @@ export default function LoginPage() {
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
                     onClick={() => {
-                      setForgotStep(1)
-                      setIsForgotPassword(false)
+                      console.log("Password reset for:", email);
+                      setForgotStep(1);
+                      setIsForgotPassword(false);
+                      setEmail("");
+                      setOtp("");
                     }}
+                    type="button"
                   >
                     Reset Password
                   </Button>
@@ -175,6 +199,8 @@ export default function LoginPage() {
                   setIsForgotPassword(false);
                   setIsRegister(false);
                   setForgotStep(1);
+                  setEmail("");
+                  setOtp("");
                 }}
               >
                 Back to Login
@@ -182,7 +208,6 @@ export default function LoginPage() {
             </form>
           ) : isRegister ? (
             <>
-              {/* Register Form */}
               <h2 className="text-xl font-semibold mb-4 text-center">
                 Create an Account
               </h2>
@@ -271,7 +296,6 @@ export default function LoginPage() {
             </>
           ) : (
             <>
-              {/* Login Form */}
               <h2 className="text-xl font-semibold mb-4 text-center">Welcome Back</h2>
               <p className="text-white mb-6 text-center">
                 Login to your CricketTMS account
@@ -302,9 +326,8 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-              
+
                 <div className="space-y-4">
-                  {/* Forgot Password Link - Right Aligned */}
                   <div className="flex justify-end text-sm">
                     <p
                       className="underline text-gray-400 cursor-pointer"
@@ -314,14 +337,12 @@ export default function LoginPage() {
                     </p>
                   </div>
 
-                  {/* Login Button - Centered */}
                   <div className="flex justify-center">
                     <Button className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300">
                       Log in
                     </Button>
                   </div>
 
-                  {/* Register Link - Centered */}
                   <p
                     className="text-sm text-center underline text-gray-400 cursor-pointer"
                     onClick={() => setIsRegister(true)}
