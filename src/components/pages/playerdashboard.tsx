@@ -34,27 +34,24 @@ export default function CricketDashboard() {
       </div>
 
       {/* Dashboard Section */}
-      <section className="mt-16 mb-32">
-        <div className="flex justify-between items-center mb-8">
+      <section className="mt-14 mb-30">
+        <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-lg font-semibold">Dashboard</h2>
             <p className="text-gray-400 text-sm">Manage your cricket tournament</p>
           </div>
           <Button className="flex items-center gap-2 px-3 py-1 rounded-md bg-white text-black border border-gray-300 hover:bg-gray-300">
-            <span className="w-6 h-6 flex items-center justify-center border border-black rounded-full text-black font-bold text-xl leading-none">
+            <span className="w-6 h-6 flex-shrink-0 flex items-center justify-center text-center border border-black rounded-full text-black font-bold text-lg">
               +
             </span>
-            <span className="text-sm">Join In Team</span>
+            <span className="text-sm">Join in Team</span>
           </Button>
         </div>
 
         {/* Dashboard Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { title: "Team", count: 0, text: "Join in team to see no. of players" },
-            { title: "Total Players", count: 0, text: "Join in team to see no. of players" },
-            { title: "Total Players", count: 0, text: "Join in team to see no. of players" },
-            { title: "Total Players", count: 0, text: "Join in team to see no. of players" },
+            { title: "Team", count: 0, text: "Join in team" },
           ].map((card, index) => (
             <Card key={index} className="bg-black border border-gray-700 text-white w-full h-40 p-8">
               <CardContent className="flex flex-col items-center justify-center text-center h-full">
@@ -68,9 +65,9 @@ export default function CricketDashboard() {
       </section>
 
       {/* Upcoming Matches */}
-      <section className="mb-14">
-        <h2 className="text-2xl font-semibold">Upcoming Matches</h2>
-        <div className="grid grid-cols-3 gap-4 mt-4">
+      <section>
+        <h2 className="text-2xl font-semibold mt-24">Upcoming Matches</h2>
+        <div className="grid grid-cols-3 gap-4 mt-6">
           {[ 
             { date: "2025-03-30", time: "16:00", stadium: "M. Chinnaswamy Stadium" },
             { date: "2025-04-04", time: "15:00", stadium: "Arun Jaitley Stadium" }
@@ -142,7 +139,7 @@ export default function CricketDashboard() {
               ))}
               {/* Button row */}
               <TableRow>
-              <TableCell colSpan={8} className="text-center pt-4 border-t border-gray-700">
+                <TableCell colSpan={8} className="text-center pt-4 border-t border-gray-700">
                   <Button className="bg-white border-2 border-gray-500 text-black rounded-md px-6 py-2 hover:bg-white hover:text-black hover:border-gray-700">
                     View complete table
                   </Button>
