@@ -36,7 +36,6 @@ export default function LoginPage() {
     setError("");
 
     setTimeout(() => {
-      console.log("OTP sent to:", email);
       setForgotStep(2);
       setLoading(false);
     }, 1500);
@@ -180,7 +179,6 @@ export default function LoginPage() {
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
                     onClick={() => {
-                      console.log("Password reset for:", email);
                       setForgotStep(1);
                       setIsForgotPassword(false);
                       setEmail("");
