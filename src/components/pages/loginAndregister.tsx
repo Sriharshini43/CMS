@@ -19,16 +19,16 @@ export default function LoginPage() {
         <p className="text-white mb-4 text-center">Manage your cricket tournament, teams, and matches</p>
 
         {/* Toggle Buttons */}
-        <div className="bg-gray-700 p-1 mb-8 mt-4 w-full max-w-md rounded-lg">
+        <div className="bg-[#27272A] p-1 mb-8 mt-4 w-full max-w-md rounded-lg">
           <div className="flex gap-2">
             <Button 
-              className={`flex-1 border-black p-2 transition-colors rounded-md hover:bg-gray-400 ${!isRegister ? "bg-white text-black" : "bg-black text-white"}`}
+              className={`flex-1 border-black p-2 transition-colors rounded-md hover:bg-gray-400 ${!isRegister ? "bg-white text-black" : "bg-[#27272A] text-white"}`}
               onClick={() => setIsRegister(false)}
             >
               Log in
             </Button>
             <Button 
-              className={`flex-1 p-2 transition-colors rounded-md hover:bg-gray-400 ${isRegister ? "bg-white text-black" : "bg-black text-white"}`}
+              className={`flex-1 p-2 transition-colors rounded-md hover:bg-gray-400 ${isRegister ? "bg-white text-black" : "bg-[#27272A] text-white"}`}
               onClick={() => setIsRegister(true)}
             >
               Register
@@ -37,7 +37,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form Section */}
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md leading-1 ">
           <h2 className="text-xl font-semibold mb-4 text-center">{isRegister ? "Create an Account" : "Welcome Back"}</h2>
           <p className="text-white mb-6 text-center">{isRegister ? "Join CricketTMS and start your cricket journey" : "Login to your CricketTMS account"}</p>
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input type={showPassword ? "text" : "password"} placeholder="Enter your password" className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10" />
                     <button type="button" className="absolute right-3 top-3" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                      {showPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                     </button>
                   </div>
                 </div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10" />
                     <button type="button" className="absolute right-3 top-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                      {showConfirmPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                      {showConfirmPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                     </button>
                   </div>
                 </div>
@@ -82,8 +82,8 @@ export default function LoginPage() {
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
                   <SelectContent className="bg-black text-white border border-gray-600 rounded-md">
-                    <SelectItem value="organizer">Tournament Organizer</SelectItem>
-                    <SelectItem value="manager">Team Manager</SelectItem>
+                    <SelectItem value="tournamnet_organizer">Tournament Organizer</SelectItem>
+                    <SelectItem value="team_manager">Team Manager</SelectItem>
                     <SelectItem value="player">Player</SelectItem>
                   </SelectContent>
                 </Select>
@@ -103,7 +103,7 @@ export default function LoginPage() {
                 <div className="relative">
                   <Input type={showPassword ? "text" : "password"} placeholder="Enter your password" className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10" />
                   <button type="button" className="absolute right-3 top-3" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                    {showPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
                 </div>
               </div>
