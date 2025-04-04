@@ -34,8 +34,8 @@ export default function CricketDashboard() {
       </div>
 
       {/* Dashboard Section */}
-      <section className="mb-5">
-        <div className="flex justify-between items-center mb-3">
+      <section className="mt-14 mb-30">
+        <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-lg font-semibold">Dashboard</h2>
             <p className="text-gray-400 text-sm">Manage your cricket tournament</p>
