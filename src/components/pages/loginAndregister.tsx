@@ -149,9 +149,9 @@ export default function LoginPage() {
                         }
                       >
                         {showNewConfirmPassword ? (
-                          <Eye size={20} />
+                          <Eye size={15} />
                         ) : (
-                          <EyeOff size={20} />
+                          <EyeOff size={15} />
                         )}
                       </button>
                     </div>
