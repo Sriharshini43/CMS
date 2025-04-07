@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import LoginAndRegisterPage from "@/components/pages/loginAndregister";
+import PlayerDashboard from "@/components/pages/playerdashboard";
+import TeamRegistration from "@/components/pages/teamregister";
 
 function App() {
   return (
@@ -8,6 +10,8 @@ function App() {
       <GlobalNavigationControl />
       <Routes>
         <Route path="/" element={<LoginAndRegisterPage />} />
+        <Route path="/playerdashboard" element={<PlayerDashboard/>} />
+        <Route path="/teamregistration" element={<TeamRegistration/>} />
       </Routes>
     </Router>
   );
