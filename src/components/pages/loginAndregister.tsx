@@ -11,34 +11,230 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Eye, EyeOff } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [isRegister, setIsRegister] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [forgotStep, setForgotStep] = useState(1);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showNewConfirmPassword, setShowNewConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [otp, setOtp] = useState("");
+  const [forgotStep, setForgotStep] = useState(1);
+  const [success, setSuccess] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newConfirmPassword, setNewConfirmPassword] = useState("");
 
-  const handleSendOtp = () => {
-    if (!email.includes("@")) {
-      setError("Please enter a valid email address.");
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [registerData, setRegisterData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: ""
+  });
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess("");
+      }, 2000); // Hide after 4 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 4000); // Hide after 4 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+  
+  const handleSendOtp = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/forgotpass", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess("OTP sent to your email.");
+        setForgotStep(2);
+      } else {
+        setError(data.message || "Failed to send OTP.");
+      }
+    } catch {
+      setError("Server error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Verify OTP
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) return setError("Invalid OTP.");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/verifyOtp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, otp })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("otp_token", data.token); // Save token for reset
+        setSuccess("OTP verified.");
+        setForgotStep(3);
+      } else {
+        setError(data.message || "OTP verification failed.");
+      }
+    } catch {
+      setError("Server error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 3: Reset Password
+  const handleResetPassword = async () => {
+    if (newPassword !== newConfirmPassword) {
+      return setError("Passwords do not match.");
+    }
+
+    const token = localStorage.getItem("otp_token");
+    if (!token) {
+      setError("Session expired. Please request OTP again.");
+      setForgotStep(1);
       return;
     }
 
     setLoading(true);
-    setError("");
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/restPassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ newPassword })
+      });
 
-    setTimeout(() => {
-      setForgotStep(2);
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess("Password reset successful. Please login.");
+        localStorage.removeItem("otp_token");
+        setTimeout(() => {
+          setIsForgotPassword(false);
+          setForgotStep(1);
+        }, 2000);
+      } else {
+        setError(data.message || "Reset failed.");
+      }
+    } catch {
+      setError("Server error.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { email, password } = loginData;
+    setError("");
+    setSuccess("");
+    setLoading(true);
+  
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      let data: any = {};
+      try {
+        data = await res.json(); // attempt to parse JSON even on error
+      } catch (jsonError) {
+        console.error("Failed to parse JSON:", jsonError);
+      }
+  
+      if (res.ok) {
+        setSuccess("Login successful!");
+        localStorage.setItem("access_token", data.token);
+  
+        switch (data.role) {
+          case "player":
+            navigate("/playerdashboard");
+            break;
+          case "team_manager":
+            navigate("/teamregister");
+            break;
+          case "tournament_orgniser":
+            navigate("/tournamentregister");
+            break;
+          default:
+            setError("Unrecognized role. Contact admin.");
+            break;
+        }
+      } else {
+        setError(data.message || data.error || "Login failed.");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Something went wrong. Try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };  
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    const { username, email, password, confirmPassword, role } = registerData;
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password, role })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setSuccess("Registered successfully! Please log in.");
+        setIsRegister(false);
+        setRegisterData({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          role: ""
+        });
+      } else {
+        setError(data.message || "Registration failed.");
+      }
+    } catch {
+      setError("Something went wrong. Try again later.");
+    }
   };
 
   return (
@@ -90,18 +286,18 @@ export default function LoginPage() {
                     <Label>Email</Label>
                     <Input
                       type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="Enter your email"
                       className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
                     />
                     {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {success && <p className="text-green-500 text-sm">{success}</p>}
                   </div>
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
-                    onClick={handleSendOtp}
-                    disabled={email.trim() === "" || loading}
                     type="button"
+                    onClick={handleSendOtp}
                   >
                     {loading ? "Sending OTP..." : "Send OTP"}
                   </Button>
@@ -113,7 +309,7 @@ export default function LoginPage() {
                   <div className="space-y-4">
                     <Label>One-Time Password</Label>
                     <p className="text-sm text-gray-400 text-center">
-                      OTP sent to <span className="font-medium text-white">{email}</span>
+                      OTP sent to <span className="font-medium text-white">{forgotEmail}</span>
                     </p>
                     <div className="flex justify-center">
                       <div className="w-full max-w-md">
@@ -123,11 +319,11 @@ export default function LoginPage() {
                   </div>
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
-                    onClick={() => setForgotStep(3)}
+                    onClick={handleVerifyOtp}
                     disabled={otp.length !== 6}
                     type="button"
                   >
-                    Verify OTP
+                    {loading ? "Verifying..." : "Verify OTP"}
                   </Button>
                 </>
               )}
@@ -139,6 +335,8 @@ export default function LoginPage() {
                     <div className="relative">
                       <Input
                         type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="New password"
                         className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
                       />
@@ -157,15 +355,15 @@ export default function LoginPage() {
                     <div className="relative">
                       <Input
                         type={showNewConfirmPassword ? "text" : "password"}
+                        value={newConfirmPassword}
+                        onChange={(e) => setNewConfirmPassword(e.target.value)}
                         placeholder="Confirm new password"
                         className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
                       />
                       <button
                         type="button"
                         className="absolute right-3 top-3"
-                        onClick={() =>
-                          setShowNewConfirmPassword(!showNewConfirmPassword)
-                        }
+                        onClick={() => setShowNewConfirmPassword(!showNewConfirmPassword)}
                       >
                         {showNewConfirmPassword ? (
                           <Eye size={15} />
@@ -178,16 +376,13 @@ export default function LoginPage() {
 
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
-                    onClick={() => {
-                      setForgotStep(1);
-                      setIsForgotPassword(false);
-                      setEmail("");
-                      setOtp("");
-                    }}
                     type="button"
+                    onClick={handleResetPassword}
                   >
-                    Reset Password
+                    {loading ? "Resetting..." : "Reset Password"}
                   </Button>
+                  {error && <p className="text-red-500 text-sm">{error}</p>}
+                  {success && <p className="text-green-500 text-sm">{success}</p>}
                 </>
               )}
 
@@ -195,10 +390,9 @@ export default function LoginPage() {
                 className="text-sm text-center underline text-gray-400 cursor-pointer mt-4"
                 onClick={() => {
                   setIsForgotPassword(false);
-                  setIsRegister(false);
+                  setError("");
+                  setSuccess("");
                   setForgotStep(1);
-                  setEmail("");
-                  setOtp("");
                 }}
               >
                 Back to Login
@@ -217,6 +411,7 @@ export default function LoginPage() {
                   <Label>Username*</Label>
                   <Input
                     type="text"
+                    value={registerData.username} onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
                     placeholder="Enter your username"
                     className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
                   />
@@ -225,6 +420,7 @@ export default function LoginPage() {
                   <Label>Email*</Label>
                   <Input
                     type="email"
+                    value={registerData.email} onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                     placeholder="Enter your email"
                     className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
                   />
@@ -235,6 +431,7 @@ export default function LoginPage() {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
+                        value={registerData.password} onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                         placeholder="Enter your password"
                         className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
                       />
@@ -252,6 +449,7 @@ export default function LoginPage() {
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
+                        value={registerData.confirmPassword} onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })} 
                         placeholder="Confirm your password"
                         className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
                       />
@@ -267,7 +465,7 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2 mt-4">
                   <Label>Role*</Label>
-                  <Select onValueChange={(value) => setSelectedRole(value)}>
+                  <Select onValueChange={(value)  => setRegisterData({ ...registerData, role: value })}>
                     <SelectTrigger className="bg-black text-white border border-gray-600 w-full p-3 rounded-md hover:border-white">
                       <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
@@ -280,10 +478,13 @@ export default function LoginPage() {
                 </div>
                 <Button
                   type="submit"
+                  onClick={handleRegister}
                   className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
                 >
                   Register
                 </Button>
+                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                {success && <p className="text-green-500 text-sm text-center">{success}</p>}
                 <p
                   className="text-sm text-center underline text-gray-400 cursor-pointer"
                   onClick={() => setIsRegister(false)}
@@ -303,6 +504,10 @@ export default function LoginPage() {
                   <Label>Email</Label>
                   <Input
                     type="email"
+                    value={loginData.email}
+                    onChange={(e) =>
+                      setLoginData({ ...loginData, email: e.target.value })
+                    }
                     placeholder="Enter your email"
                     className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
                   />
@@ -312,6 +517,10 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
+                      value={loginData.password}
+                      onChange={(e) =>
+                        setLoginData({ ...loginData, password: e.target.value })
+                      }
                       placeholder="Enter your password"
                       className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
                     />
@@ -336,10 +545,13 @@ export default function LoginPage() {
                   </div>
 
                   <div className="flex justify-center">
-                    <Button className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300">
+                    <Button onClick={handleLogin} className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300">
                       Log in
                     </Button>
                   </div>
+
+                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                {success && <p className="text-green-500 text-sm text-center">{success}</p>}
 
                   <p
                     className="text-sm text-center underline text-gray-400 cursor-pointer"
