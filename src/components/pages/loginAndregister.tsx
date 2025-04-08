@@ -134,6 +134,11 @@ export default function LoginPage() {
       return setError("Passwords do not match.");
     }
 
+    if (!isValidPassword(newPassword)) {
+      setError("Password must be at least 8 characters, start with a capital letter, and include a number and special character.");
+      return;
+    }
+
     const token = localStorage.getItem("otp_token");
     console.log("Using token for reset password:", token);
     if (!token) {
@@ -366,6 +371,17 @@ export default function LoginPage() {
                         <OTPInput value={otp} onChange={setOtp} />
                       </div>
                     </div>
+                    {/* Resend OTP link */}
+                    <p className="text-sm text-center text-gray-300">
+                      Didn't receive OTP?{" "}
+                      <button
+                        className="text-blue-400 underline hover:text-blue-600"
+                        onClick={() => setForgotStep(1)}
+                        type="button"
+                      >
+                        Resend OTP
+                      </button>
+                    </p>
                   </div>
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
