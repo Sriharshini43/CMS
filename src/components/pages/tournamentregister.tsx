@@ -128,20 +128,6 @@ export default function TournamentRegistrationForm() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Tournament Category</Label>
-                <div className="border border-gray-600 rounded-md py-2 px-4 text-sm bg-black">
-                  <select
-                    id="category"
-                    className="w-full bg-black text-white border-none focus:outline-none"
-                  >
-                    <option className="bg-black text-white">Select</option>
-                    <option className="bg-black text-white">Men</option>
-                    <option className="bg-black text-white">Women</option>
-                    <option className="bg-black text-white">U-19</option>
-                  </select>
-                </div>
-              </div>
             </div>
 
             {/* Pitch Type */}
