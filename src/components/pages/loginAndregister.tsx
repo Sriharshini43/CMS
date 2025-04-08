@@ -115,6 +115,7 @@ export default function LoginPage() {
     }
 
     const token = localStorage.getItem("otp_token");
+    console.log("Using token for reset password:", token);
     if (!token) {
       setError("Session expired. Please request OTP again.");
       setForgotStep(1);
