@@ -40,6 +40,19 @@ export default function LoginPage() {
     role: ""
   });
 
+  const isValidEmail = (email: string) => {
+    return /^[\w.-]+@(?:gmail\.com|[\w-]+\.\w+)$/.test(email);
+  };
+
+  const isValidUsername = (username: string) => {
+    return /^[A-Za-z0-9]+$/.test(username);
+  };
+  
+  const isValidPassword = (password: string) => {
+    return /^(?=[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/.test(password);
+  };
+  
+
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -61,6 +74,13 @@ export default function LoginPage() {
   const handleSendOtp = async () => {
     setLoading(true);
     setError("");
+
+    if (!isValidEmail(forgotEmail)) {
+      setError("Please enter a valid email (gmail.com or custom domain).");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("http://localhost:3001/api/auth/forgotpass", {
         method: "POST",
@@ -157,6 +177,16 @@ export default function LoginPage() {
     setError("");
     setSuccess("");
     setLoading(true);
+
+    if (!isValidEmail(email)) {
+      setError("Email must be a @gmail.com or valid custom domain.");
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      setError("Password must be at least 8 characters, start with a capital letter, and include a number and special character.");
+      return;
+    }
   
     try {
       const res = await fetch("http://localhost:3001/api/auth/login", {
@@ -181,7 +211,7 @@ export default function LoginPage() {
             navigate("/playerdashboard");
             break;
           case "team_manager":
-            navigate("/teamregister");
+            navigate("/teamregistration");
             break;
           case "tournament_orgniser":
             navigate("/tournamentregister");
@@ -212,6 +242,21 @@ export default function LoginPage() {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      setError("Email must end with @gmail.com or @----.com");
+      return;
+    }
+
+    if (!isValidUsername(username)) {
+      setError("Username must contain only letters and numbers.");
+      return;
+    }
+  
+    if (!isValidPassword(password)) {
+      setError("Password must be at least 8 characters, start with a capital letter, and include a number and special character.");
+      return;
+    }
+
     try {
       const res = await fetch("http://localhost:3001/api/auth/register", {
         method: "POST",
@@ -231,7 +276,11 @@ export default function LoginPage() {
           role: ""
         });
       } else {
-        setError(data.message || "Registration failed.");
+        if (data.code === "USER_EXISTS") {
+          setError("User with this email id already exists");
+        } else {
+          setError(data.message || "Registration failed");
+        }
       }
     } catch {
       setError("Something went wrong. Try again later.");
