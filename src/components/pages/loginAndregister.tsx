@@ -45,7 +45,7 @@ export default function LoginPage() {
   };
 
   const isValidUsername = (username: string) => {
-    return /^[A-Za-z0-9]+$/.test(username);
+    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]+$/.test(username);
   };
   
   const isValidPassword = (password: string) => {
@@ -253,7 +253,7 @@ export default function LoginPage() {
     }
 
     if (!isValidUsername(username)) {
-      setError("Username must contain only letters and numbers.");
+      setError("Username must contain one letter and one number.");
       return;
     }
   
