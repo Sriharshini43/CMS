@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import LoginAndRegisterPage from "@/components/pages/loginAndregister";
 import PlayerDashboard from "@/components/pages/playerdashboard";
 import TeamRegistration from "@/components/pages/teamregister";
+import TournamentRegister from "@/components/pages/tournamentregister";
 
 function App() {
   return (
@@ -10,6 +11,8 @@ function App() {
       <GlobalNavigationControl />
       <Routes>
         <Route path="/" element={<LoginAndRegisterPage />} />
+        <Route path="/login" element={<LoginAndRegisterPage />} />
+        <Route path="/tournamentregister" element={<TournamentRegister />} />
         <Route path="/playerdashboard" element={<PlayerDashboard/>} />
         <Route path="/teamregistration" element={<TeamRegistration/>} />
       </Routes>
