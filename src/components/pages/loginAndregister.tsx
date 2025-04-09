@@ -57,7 +57,7 @@ export default function LoginPage() {
     if (success) {
       const timer = setTimeout(() => {
         setSuccess("");
-      }, 2000); // Hide after 4 seconds
+      }, 1000); 
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -66,7 +66,7 @@ export default function LoginPage() {
     if (error) {
       const timer = setTimeout(() => {
         setError("");
-      }, 4000); // Hide after 4 seconds
+      }, 1000); 
       return () => clearTimeout(timer);
     }
   }, [error]);
@@ -115,11 +115,11 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("otp_token", data.token); // Save token for reset
+        localStorage.setItem("otp_token", data.token);
         setSuccess("OTP verified.");
         setForgotStep(3);
       } else {
-        setError(data.message || "OTP verification failed.");
+        setError(data.error || "OTP verification failed.");
       }
     } catch {
       setError("Server error.");
@@ -149,7 +149,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/api/auth/restPassword", {
+      const res = await fetch("http://localhost:3001/api/auth/resetPassword", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,7 +202,7 @@ export default function LoginPage() {
   
       let data: any = {};
       try {
-        data = await res.json(); // attempt to parse JSON even on error
+        data = await res.json(); 
       } catch (jsonError) {
         console.error("Failed to parse JSON:", jsonError);
       }
@@ -332,7 +332,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-md leading-1">
           {isForgotPassword ? (
-            <form className="space-y-6">
+            <form className="space-y-8">
               <h2 className="text-xl font-semibold mb-4 text-center">Forgot Password</h2>
 
               {forgotStep === 1 && (
@@ -361,8 +361,7 @@ export default function LoginPage() {
 
               {forgotStep === 2 && (
                 <>
-                  <div className="space-y-4">
-                    <Label>One-Time Password</Label>
+                  <div className="space-y-8">
                     <p className="text-sm text-gray-400 text-center">
                       OTP sent to <span className="font-medium text-white">{forgotEmail}</span>
                     </p>
@@ -383,6 +382,8 @@ export default function LoginPage() {
                       </button>
                     </p>
                   </div>
+                  {error && <p className="text-red-500 text-sm">{error}</p>}
+                  {success && <p className="text-green-500 text-sm">{success}</p>}
                   <Button
                     className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
                     onClick={handleVerifyOtp}
