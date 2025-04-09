@@ -44,14 +44,14 @@ export default function TeamRegistrationForm() {
     // Auto-clear messages
     useEffect(() => {
       if (error) {
-        const timer = setTimeout(() => setError(""), 1000);
+        const timer = setTimeout(() => setError(""), 4000);
         return () => clearTimeout(timer);
       }
     }, [error]);
   
     useEffect(() => {
       if (success) {
-        const timer = setTimeout(() => setSuccess(""), 1000);
+        const timer = setTimeout(() => setSuccess(""), 4000);
         return () => clearTimeout(timer);
       }
     }, [success]);
