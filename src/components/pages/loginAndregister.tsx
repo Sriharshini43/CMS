@@ -45,8 +45,8 @@ export default function LoginPage() {
   };
 
   const isValidUsername = (username: string) => {
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]+$/.test(username);
-  };
+    return /^[A-Za-z0-9]+$/.test(username);
+  };  
   
   const isValidPassword = (password: string) => {
     return /^(?=[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/.test(password);
@@ -57,7 +57,7 @@ export default function LoginPage() {
     if (success) {
       const timer = setTimeout(() => {
         setSuccess("");
-      }, 1000); 
+      }, 4000); 
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -66,7 +66,7 @@ export default function LoginPage() {
     if (error) {
       const timer = setTimeout(() => {
         setError("");
-      }, 1000); 
+      }, 4000); 
       return () => clearTimeout(timer);
     }
   }, [error]);
@@ -74,24 +74,27 @@ export default function LoginPage() {
   const handleSendOtp = async () => {
     setLoading(true);
     setError("");
-
+  
     if (!isValidEmail(forgotEmail)) {
       setError("Please enter a valid email (gmail.com or custom domain).");
       setLoading(false);
       return;
     }
-
+  
     try {
       const res = await fetch("http://localhost:3001/api/auth/forgotpass", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: forgotEmail })
       });
-
+  
       const data = await res.json();
+      
       if (res.ok) {
         setSuccess("OTP sent to your email.");
         setForgotStep(2);
+      } else if (data.code === 'USER_NOT_EXISTS') {
+        setError("User does not exist");
       } else {
         setError(data.message || "Failed to send OTP.");
       }
@@ -100,7 +103,7 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   // Step 2: Verify OTP
   const handleVerifyOtp = async () => {
@@ -537,7 +540,7 @@ export default function LoginPage() {
                       <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
                     <SelectContent className="bg-black text-white border border-gray-600 rounded-md">
-                      <SelectItem value="tournament_organizer">Tournament Organizer</SelectItem>
+                      <SelectItem value="tournament_orgniser">Tournament Organizer</SelectItem>
                       <SelectItem value="team_manager">Team Manager</SelectItem>
                       <SelectItem value="player">Player</SelectItem>
                     </SelectContent>
