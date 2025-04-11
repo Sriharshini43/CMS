@@ -13,7 +13,16 @@ export default function TournamentRegistrationForm() {
   const [success, setSuccess] = useState("");
 
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState("No file chosen");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
+    } else {
+      setFileName("No file chosen");
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -147,41 +156,29 @@ export default function TournamentRegistrationForm() {
             </div>
 
             {/* ✅ Updated Logo Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="tournament-logo">Tournament Logo</Label>
+            <div className="space-y-2 w-full">
+              <label htmlFor="tournament-logo" className="text-white text-sm">
+                Tournament Logo
+              </label>
+
               <div
-                className="flex items-center justify-center h-20 border border-gray-600 rounded-md bg-black text-sm text-gray-400 cursor-pointer"
+                className="h-20 w-full border border-gray-600 rounded-md bg-black text-sm text-gray-400 cursor-pointer flex justify-center items-center px-4 space-x-4"
                 onClick={() => logoInputRef.current?.click()}
               >
-                Upload Logo
+                <span className="text-white font-medium">Upload Logo</span>
+                <span className="text-xs truncate max-w-[60%]">{fileName}</span>
               </div>
-              <Input
+
+              <input
                 id="tournament-logo"
                 type="file"
                 accept="image/png, image/jpeg"
                 ref={logoInputRef}
                 className="hidden"
+                onChange={handleFileChange}
               />
-              <p className="text-xs text-gray-400">PNG/JPG | Min 200x200px</p>
-            </div>
 
-            {/* ✅ Updated Banner Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="tournament-banner">Tournament Banner</Label>
-              <div
-                className="flex items-center justify-center h-32 border border-gray-600 rounded-md bg-black text-sm text-gray-400 cursor-pointer"
-                onClick={() => bannerInputRef.current?.click()}
-              >
-                Upload Banner
-              </div>
-              <Input
-                id="tournament-banner"
-                type="file"
-                accept="image/png, image/jpeg"
-                ref={bannerInputRef}
-                className="hidden"
-              />
-              <p className="text-xs text-gray-400">PNG/JPG | Recommended 1200x400px</p>
+              <p className="text-xs text-gray-400">PNG/JPG | Min 200x200px</p>
             </div>
 
             {/* Description */}
