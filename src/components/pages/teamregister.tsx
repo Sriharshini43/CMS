@@ -3,7 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 
@@ -11,6 +11,14 @@ export default function TeamRegistrationForm() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const teamLogoInputRef = useRef<HTMLInputElement>(null);
+  const [teamFileName, setTeamFileName] = useState("No file chosen");
+
+  const handleTeamFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setTeamFileName(file ? file.name : "No file chosen");
+  };
 
   const handleLogout = async () => {
       try {
@@ -115,19 +123,28 @@ export default function TeamRegistrationForm() {
             </div>
 
             {/* Team Logo */}
-            <div className="space-y-2">
-              <Label htmlFor="team-logo">Team Logo</Label>
-              <div className="relative h-20">
-                <Input
-                  id="team-logo"
-                  type="file"
-                  className="opacity-0 absolute inset-0 z-10 cursor-pointer"
-                  accept="image/png, image/jpeg"
-                />
-                <div className="flex items-center justify-center h-full border border-gray-600 rounded-md bg-black text-sm text-gray-400 cursor-pointer">
-                  Upload Logo
-                </div>
+            <div className="space-y-2 w-full">
+              <label htmlFor="team-logo" className="text-white text-sm">
+                Team Logo
+              </label>
+
+              <div
+                className="h-20 w-full border border-gray-600 rounded-md bg-black text-sm text-gray-400 cursor-pointer flex justify-center items-center space-x-4"
+                onClick={() => teamLogoInputRef.current?.click()}
+              >
+                <span className="text-white font-medium">Upload Logo</span>
+                <span className="text-xs truncate max-w-[50%]">{teamFileName}</span>
               </div>
+
+              <input
+                id="team-logo"
+                type="file"
+                accept="image/png, image/jpeg"
+                ref={teamLogoInputRef}
+                className="hidden"
+                onChange={handleTeamFileChange}
+              />
+
               <p className="text-xs text-gray-400">
                 Upload a square logo image (PNG, JPG) with a minimum size of 200x200px.
               </p>
