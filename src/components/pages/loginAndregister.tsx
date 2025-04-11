@@ -40,12 +40,30 @@ export default function LoginPage() {
     role: ""
   });
 
+  const [registerErrors, setRegisterErrors] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: ""
+  });
+
+  const [loginErrors, setLoginErrors] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [ForgotPasswordErrors, setForgotPasswordErrors] = useState({
+    newPassword: "",
+    newConfirmPassword: "",
+  });
+
   const isValidEmail = (email: string) => {
     return /^[\w.-]+@(?:gmail\.com|[\w-]+\.\w+)$/.test(email);
   };
 
   const isValidUsername = (username: string) => {
-    return /^[A-Za-z0-9]+$/.test(username);
+    return /^[A-Za-z0-9]{2,}$/.test(username) && /[A-Za-z]/.test(username);
   };  
   
   const isValidPassword = (password: string) => {
@@ -57,7 +75,7 @@ export default function LoginPage() {
     if (success) {
       const timer = setTimeout(() => {
         setSuccess("");
-      }, 4000); 
+      }, 200); 
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -92,7 +110,10 @@ export default function LoginPage() {
       
       if (res.ok) {
         setSuccess("OTP sent to your email.");
-        setForgotStep(2);
+        setTimeout(() => {
+          setSuccess(""); 
+          setForgotStep(2);
+        }, 200);
       } else if (data.code === 'USER_NOT_EXISTS') {
         setError("User does not exist");
       } else {
@@ -120,7 +141,10 @@ export default function LoginPage() {
       if (res.ok) {
         localStorage.setItem("otp_token", data.token);
         setSuccess("OTP verified.");
-        setForgotStep(3);
+        setTimeout(() => {
+          setSuccess("");
+          setForgotStep(3);
+        }, 200);
       } else {
         setError(data.error || "OTP verification failed.");
       }
@@ -133,42 +157,52 @@ export default function LoginPage() {
 
   // Step 3: Reset Password
   const handleResetPassword = async () => {
+    let errors = {
+      newPassword: "",
+      newConfirmPassword: "",
+    };
+  
     if (newPassword !== newConfirmPassword) {
-      return setError("Passwords do not match.");
+      errors.newConfirmPassword = "Passwords do not match.";
     }
-
+  
     if (!isValidPassword(newPassword)) {
-      setError("Password must be at least 8 characters, start with a capital letter, and include a number and special character.");
-      return;
+      errors.newPassword =
+        "Password must be at least 8 characters, start with a capital letter, and include a number and special character.";
     }
-
+  
+    setForgotPasswordErrors(errors);
+  
+    // Stop if there's any error
+    if (Object.values(errors).some((e) => e)) return;
+  
     const token = localStorage.getItem("otp_token");
-    console.log("Using token for reset password:", token);
     if (!token) {
       setError("Session expired. Please request OTP again.");
       setForgotStep(1);
       return;
     }
-
+  
     setLoading(true);
     try {
       const res = await fetch("http://localhost:3001/api/auth/resetPassword", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ newPassword })
+        body: JSON.stringify({ newPassword }),
       });
-
+  
       const data = await res.json();
       if (res.ok) {
         setSuccess("Password reset successful. Please login.");
         localStorage.removeItem("otp_token");
         setTimeout(() => {
-          setIsForgotPassword(false);
-          setForgotStep(1);
-        }, 2000);
+          setIsForgotPassword(false); 
+          setForgotStep(1); 
+          setSuccess(""); 
+        }, 200);
       } else {
         setError(data.message || "Reset failed.");
       }
@@ -177,24 +211,20 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const { email, password } = loginData;
     setError("");
     setSuccess("");
     setLoading(true);
-
-    if (!isValidEmail(email)) {
-      setError("Email must be a @gmail.com or valid custom domain.");
-      return;
-    }
-
-    if (!isValidPassword(password)) {
-      setError("Password must be at least 8 characters, start with a capital letter, and include a number and special character.");
-      return;
-    }
+  
+    // Clear previous field errors
+    setLoginErrors({
+      email: "",
+      password: "",
+    });
   
     try {
       const res = await fetch("http://localhost:3001/api/auth/login", {
@@ -203,33 +233,43 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
   
-      let data: any = {};
-      try {
-        data = await res.json(); 
-      } catch (jsonError) {
-        console.error("Failed to parse JSON:", jsonError);
-      }
+      const data = await res.json();
   
       if (res.ok) {
         setSuccess("Login successful!");
         localStorage.setItem("access_token", data.token);
   
-        switch (data.role) {
+        switch (data.role?.toLowerCase()) {
           case "player":
-            navigate("/playerdashboard");
+            setTimeout(() => navigate("/playerdashboard"), 200);
             break;
           case "team_manager":
-            navigate("/teamregistration");
+            setTimeout(() => navigate("/teamregistration"), 200);
             break;
           case "tournament_orgniser":
-            navigate("/tournamentregister");
+            setTimeout(() => navigate("/tournamentregister"), 200);
             break;
           default:
             setError("Unrecognized role. Contact admin.");
             break;
         }
       } else {
-        setError(data.message || data.error || "Login failed.");
+        switch (data.code) {
+          case "USER_NOT_EXISTS":
+            setLoginErrors((prev) => ({
+              ...prev,
+              email: "No account found with this email.",
+            }));
+            break;
+          case "INVALID_PASSWORD":
+            setLoginErrors((prev) => ({
+              ...prev,
+              password: "Incorrect password. Please try again.",
+            }));
+            break;
+          default:
+            setError(data.message || data.error || "Login failed.");
+        }
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -245,25 +285,34 @@ export default function LoginPage() {
     setSuccess("");
     const { username, email, password, confirmPassword, role } = registerData;
 
+    let errors = {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: ""
+    };
+    
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+      errors.confirmPassword = "Passwords do not match.";
     }
-
     if (!isValidEmail(email)) {
-      setError("Email must end with @gmail.com or @----.com");
-      return;
+      errors.email = "Email must end with @gmail.com or @----.com";
     }
-
     if (!isValidUsername(username)) {
-      setError("Username must contain one letter and one number.");
-      return;
+      errors.username = "Username must be at least 2 characters, contain only letters or numbers, and include at least one letter.";
     }
-  
     if (!isValidPassword(password)) {
-      setError("Password must be at least 8 characters, start with a capital letter, and include a number and special character.");
-      return;
+      errors.password = "Password must be at least 8 characters, start with a capital letter, and include a number and special character.";
     }
+    if (!registerData.role) {
+      errors.role = "Role is required.";
+    }
+    
+    setRegisterErrors(errors);
+    
+    // Check if any error exists
+    if (Object.values(errors).some(err => err)) return;    
 
     try {
       const res = await fetch("http://localhost:3001/api/auth/register", {
@@ -275,7 +324,6 @@ export default function LoginPage() {
 
       if (res.ok) {
         setSuccess("Registered successfully! Please log in.");
-        setIsRegister(false);
         setRegisterData({
           username: "",
           email: "",
@@ -283,13 +331,17 @@ export default function LoginPage() {
           confirmPassword: "",
           role: ""
         });
+        setTimeout(() => {
+          setIsRegister(false);
+          setSuccess(""); 
+        }, 2000);
       } else {
         if (data.code === "USER_EXISTS") {
           setError("User with this email id already exists");
         } else {
           setError(data.message || "Registration failed");
         }
-      }
+      }      
     } catch {
       setError("Something went wrong. Try again later.");
     }
@@ -406,9 +458,14 @@ export default function LoginPage() {
                       <Input
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          setForgotPasswordErrors((prev) => ({ ...prev, newPassword: "" }));
+                        }}
                         placeholder="New password"
-                        className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
+                        className={`bg-black text-white border p-3 rounded-md hover:border-white pr-10 ${
+                          ForgotPasswordErrors.newPassword ? "border-red-500" : "border-gray-600"
+                        }`}
                       />
                       <button
                         type="button"
@@ -418,6 +475,11 @@ export default function LoginPage() {
                         {showNewPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                       </button>
                     </div>
+                    {ForgotPasswordErrors.newPassword && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {ForgotPasswordErrors.newPassword}
+                      </p>
+                    )}
                   </div>
 
                   <div className="relative space-y-2">
@@ -426,22 +488,33 @@ export default function LoginPage() {
                       <Input
                         type={showNewConfirmPassword ? "text" : "password"}
                         value={newConfirmPassword}
-                        onChange={(e) => setNewConfirmPassword(e.target.value)}
+                        onChange={(e) => {
+                          setNewConfirmPassword(e.target.value);
+                          setForgotPasswordErrors((prev) => ({
+                            ...prev,
+                            newConfirmPassword: "",
+                          }));
+                        }}
                         placeholder="Confirm new password"
-                        className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
+                        className={`bg-black text-white border p-3 rounded-md hover:border-white pr-10 ${
+                          ForgotPasswordErrors.newConfirmPassword ? "border-red-500" : "border-gray-600"
+                        }`}
                       />
                       <button
                         type="button"
                         className="absolute right-3 top-3"
-                        onClick={() => setShowNewConfirmPassword(!showNewConfirmPassword)}
+                        onClick={() =>
+                          setShowNewConfirmPassword(!showNewConfirmPassword)
+                        }
                       >
-                        {showNewConfirmPassword ? (
-                          <Eye size={15} />
-                        ) : (
-                          <EyeOff size={15} />
-                        )}
+                        {showNewConfirmPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                       </button>
                     </div>
+                    {ForgotPasswordErrors.newConfirmPassword && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {ForgotPasswordErrors.newConfirmPassword}
+                      </p>
+                    )}
                   </div>
 
                   <Button
@@ -451,11 +524,12 @@ export default function LoginPage() {
                   >
                     {loading ? "Resetting..." : "Reset Password"}
                   </Button>
-                  {error && <p className="text-red-500 text-sm">{error}</p>}
-                  {success && <p className="text-green-500 text-sm">{success}</p>}
+
+                  {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                  {success && <p className="text-green-500 text-sm text-center">{success}</p>}
                 </>
               )}
-
+              
               <p
                 className="text-sm text-center underline text-gray-400 cursor-pointer mt-4"
                 onClick={() => {
@@ -481,19 +555,33 @@ export default function LoginPage() {
                   <Label>Username*</Label>
                   <Input
                     type="text"
-                    value={registerData.username} onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
+                    value={registerData.username} onChange={(e) => {
+                      setRegisterData({ ...registerData, username: e.target.value });
+                      setRegisterErrors({ ...registerErrors, username: "" });
+                    }}
                     placeholder="Enter your username"
-                    className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
+                    className={`bg-black text-white border p-3 rounded-md hover:border-white ${
+                      registerErrors.username ? "border-red-500" : "border-gray-600"
+                    }`}
                   />
+                  {registerErrors.username && (
+                    <p className="text-red-500 text-sm mt-1">{registerErrors.username}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Email*</Label>
                   <Input
                     type="email"
-                    value={registerData.email} onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                    value={registerData.email} onChange={(e) => {
+                      setRegisterData({ ...registerData, email: e.target.value });
+                      setRegisterErrors({ ...registerErrors, email: "" });
+                    }}
                     placeholder="Enter your email"
-                    className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
+                    className={`bg-black text-white border p-3 rounded-md hover:border-white ${
+                      registerErrors.email ? "border-red-500" : "border-gray-600"
+                    }`}
                   />
+                  {registerErrors.email && <p className="text-red-500 text-sm">{registerErrors.email}</p>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="relative space-y-2">
@@ -501,9 +589,14 @@ export default function LoginPage() {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        value={registerData.password} onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                        value={registerData.password}  onChange={(e) => {
+                          setRegisterData({ ...registerData, password: e.target.value });
+                          setRegisterErrors({ ...registerErrors, password: "" });
+                        }}
                         placeholder="Enter your password"
-                        className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
+                        className={`bg-black text-white border p-3 rounded-md hover:border-white pr-10 ${
+                          registerErrors.password ? "border-red-500" : "border-gray-600"
+                        }`}
                       />
                       <button
                         type="button"
@@ -513,15 +606,21 @@ export default function LoginPage() {
                         {showPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                       </button>
                     </div>
+                    {registerErrors.password && <p className="text-red-500 text-sm">{registerErrors.password}</p>}
                   </div>
                   <div className="relative space-y-2">
                     <Label>Confirm Password*</Label>
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
-                        value={registerData.confirmPassword} onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })} 
+                        value={registerData.confirmPassword} onChange={(e) => {
+                          setRegisterData({ ...registerData, confirmPassword: e.target.value });
+                          setRegisterErrors({ ...registerErrors, confirmPassword: "" });
+                        }}
                         placeholder="Confirm your password"
-                        className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
+                        className={`bg-black text-white border p-3 rounded-md hover:border-white pr-10 ${
+                          registerErrors.confirmPassword ? "border-red-500" : "border-gray-600"
+                        }`}
                       />
                       <button
                         type="button"
@@ -531,12 +630,25 @@ export default function LoginPage() {
                         {showConfirmPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                       </button>
                     </div>
+                    {registerErrors.confirmPassword && (
+                        <p className="text-red-500 text-sm">{registerErrors.confirmPassword}</p>
+                      )}
                   </div>
                 </div>
+                {/* Role */}
                 <div className="space-y-2 mt-4">
                   <Label>Role*</Label>
-                  <Select onValueChange={(value)  => setRegisterData({ ...registerData, role: value })}>
-                    <SelectTrigger className="bg-black text-white border border-gray-600 w-full p-3 rounded-md hover:border-white">
+                  <Select
+                    onValueChange={(value) => {
+                      setRegisterData({ ...registerData, role: value });
+                      setRegisterErrors({ ...registerErrors, role: "" });
+                    }}
+                  >
+                    <SelectTrigger
+                      className={`bg-black text-white w-full p-3 rounded-md hover:border-white ${
+                        registerErrors.role ? "border-red-500" : "border-gray-600"
+                      }`}
+                    >
                       <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
                     <SelectContent className="bg-black text-white border border-gray-600 rounded-md">
@@ -545,6 +657,7 @@ export default function LoginPage() {
                       <SelectItem value="player">Player</SelectItem>
                     </SelectContent>
                   </Select>
+                  {registerErrors.role && <p className="text-red-500 text-sm">{registerErrors.role}</p>}
                 </div>
                 <Button
                   type="submit"
@@ -569,30 +682,40 @@ export default function LoginPage() {
               <p className="text-white mb-6 text-center">
                 Login to your CricketTMS account
               </p>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleLogin}>
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <Input
                     type="email"
                     value={loginData.email}
-                    onChange={(e) =>
-                      setLoginData({ ...loginData, email: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setLoginData({ ...loginData, email: e.target.value });
+                      setLoginErrors({ ...loginErrors, email: "" }); // Clear email error on change
+                    }}
                     placeholder="Enter your email"
-                    className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white"
+                    className={`bg-black text-white border p-3 rounded-md hover:border-white ${
+                      loginErrors.email ? "border-red-500" : "border-gray-600"
+                    }`}
                   />
+                  {loginErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{loginErrors.email}</p>
+                  )}
                 </div>
+
                 <div className="relative space-y-2">
                   <Label>Password</Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
                       value={loginData.password}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, password: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setLoginData({ ...loginData, password: e.target.value });
+                        setLoginErrors({ ...loginErrors, password: "" }); // Clear password error on change
+                      }}
                       placeholder="Enter your password"
-                      className="bg-black text-white border border-gray-600 p-3 rounded-md hover:border-white pr-10"
+                      className={`bg-black text-white border p-3 rounded-md pr-10 hover:border-white ${
+                        loginErrors.password ? "border-red-500" : "border-gray-600"
+                      }`}
                     />
                     <button
                       type="button"
@@ -602,6 +725,9 @@ export default function LoginPage() {
                       {showPassword ? <Eye size={15} /> : <EyeOff size={15} />}
                     </button>
                   </div>
+                  {loginErrors.password && (
+                    <p className="text-red-500 text-sm mt-1">{loginErrors.password}</p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -615,13 +741,22 @@ export default function LoginPage() {
                   </div>
 
                   <div className="flex justify-center">
-                    <Button onClick={handleLogin} className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300">
+                    <Button
+                      type="submit"
+                      className="w-full bg-white text-black p-3 rounded-md hover:bg-gray-300"
+                    >
                       Log in
                     </Button>
                   </div>
 
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                {success && <p className="text-green-500 text-sm text-center">{success}</p>}
+                  {/* Show general errors only if there are no field-level errors */}
+                  {!loginErrors.email && !loginErrors.password && error && (
+                    <p className="text-red-500 text-sm text-center">{error}</p>
+                  )}
+
+                  {success && (
+                    <p className="text-green-500 text-sm text-center">{success}</p>
+                  )}
 
                   <p
                     className="text-sm text-center underline text-gray-400 cursor-pointer"
